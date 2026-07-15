@@ -62,6 +62,7 @@ PAGE = """<!doctype html>
          border-top:1px solid var(--line)}
   @media(max-width:760px){aside{display:none}}
 </style>
+<script defer src="/_vercel/speed-insights/script.js"></script>
 </head>
 <body>
 <header><div><span id="heravatar"></span> <b id="hername">{{ name }}</b> · sovereign companion</div>
