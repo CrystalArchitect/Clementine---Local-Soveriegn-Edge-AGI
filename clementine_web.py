@@ -24,6 +24,10 @@ PAGE = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ name }} — sovereign companion</title>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
 <style>
   :root{--bg:#000004;--ink:#E9EBF4;--muted:#A6ACC4;--purple:#A78BFA;
         --card:#07070F;--line:rgba(233,235,244,.12)}
