@@ -59,12 +59,16 @@ All documents live in [`content/`](content/) and are rendered in-app by the ligh
 
 ## Licensing
 
-**Code**: Apache License 2.0 (see [`LICENSE`](LICENSE) file)
+**Everything in this repository** — code and content alike —
+[Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)](https://creativecommons.org/licenses/by-nc-nd/4.0/), see [`LICENSE`](LICENSE).
 
-**Content** (writing, Codex, Apocryphon, imagery, and design):
-[Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
+The code here was previously offered under Apache-2.0. That grant is perpetual and irrevocable for copies already taken under it; this change governs copies taken from 2026-07-28 forward. See ADR-0013 in the umbrella repository for the decision and its scope.
 
-You are welcome to share this work, but you may not modify it or use it for commercial purposes.
+You are welcome to share this work, but you may not modify it or use it for commercial purposes. Commercial use requires explicit permission from the copyright holder.
+
+The content (writing, Codex, Apocryphon, imagery, and design) was already
+under these terms and is unchanged; what changed is that the code now
+matches it instead of sitting under a second, incompatible licence.
 
 See [`LICENSE-CONTENT.md`](content/LICENSE-CONTENT.md) for the full content-license terms.
 
