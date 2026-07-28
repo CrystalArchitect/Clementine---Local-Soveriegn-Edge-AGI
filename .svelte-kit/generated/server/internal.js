@@ -26,7 +26,7 @@ export const options = {
 		app: ({ head, body, assets, nonce, env }) => "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <meta name=\"color-scheme\" content=\"dark\" />\n    <meta name=\"theme-color\" content=\"#000004\" />\n    <link rel=\"icon\" href=\"" + assets + "/favicon.svg\" />\n    <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\" />\n    <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin />\n    <link\n      href=\"https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500&display=swap\"\n      rel=\"stylesheet\"\n    />\n    " + head + "\n  </head>\n  <body data-sveltekit-preload-data=\"hover\" style=\"background:#000004;color:#E9EBF4\">\n    <div style=\"display: contents\">" + body + "</div>\n  </body>\n</html>\n",
 		error
 	},
-	version_hash: "1bbwl7j"
+	version_hash: "1gdtw4w"
 };
 
 export async function get_hooks() {
