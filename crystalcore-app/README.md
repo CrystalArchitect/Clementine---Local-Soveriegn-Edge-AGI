@@ -54,7 +54,10 @@ This is the beginning of **TerAustralis Incognita** — Australia's contribution
 
 ## Licensing
 
-**Code**: Apache License 2.0 (see [`LICENSE`](LICENSE) file)
+**Everything here** — code and content alike —
+[CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/), see [`LICENSE`](LICENSE), matching this repository's root licence.
+
+Previously offered under Apache-2.0; that grant is perpetual and irrevocable for copies already taken under it, and this change governs copies taken from 2026-07-28 forward. See ADR-0013 in the umbrella repository.
 
 **Content** (writing, Codex, Apocryphon, imagery, and design):
 [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
