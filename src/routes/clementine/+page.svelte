@@ -95,17 +95,17 @@ cd webapp && npm install && npm run dev   # open 127.0.0.1:5174`;
         mythos, and docs together
       </li>
       <li>
-        <a href="https://github.com/CrystalArchitect/The-Crystal-Vision/blob/main/CLEMENTINE.md"
+        <a href="https://github.com/CrystalArchitect/The-Crystal-Vision/blob/master/content/CLEMENTINE.md"
           >CLEMENTINE.md</a
         > — full component status and commands
       </li>
       <li>
-        <a href="https://github.com/CrystalArchitect/The-Crystal-Vision/blob/main/MEMORY.md"
+        <a href="https://github.com/CrystalArchitect/The-Crystal-Vision/blob/master/content/MEMORY.md"
           >MEMORY.md</a
         > — how her four-layer memory works
       </li>
       <li>
-        <a href="https://github.com/CrystalArchitect/The-Crystal-Vision/blob/main/GOVERNANCE.md"
+        <a href="https://github.com/CrystalArchitect/The-Crystal-Vision/blob/master/content/GOVERNANCE.md"
           >GOVERNANCE.md</a
         > — how this project keeps its claims honest
       </li>

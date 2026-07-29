@@ -45,7 +45,7 @@ function stripInline(text) {
   return text.replace(/[*_`>#]/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').trim();
 }
 
-const GITHUB_BLOB = 'https://github.com/CrystalArchitect/The-Crystal-Vision/blob/main';
+const GITHUB_BLOB = 'https://github.com/CrystalArchitect/The-Crystal-Vision/blob/master';
 
 /**
  * Rewrite in-repo links/images so they work inside the app viewer:
