@@ -29,6 +29,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # The suite is offline — it makes no network calls — but the package
+      # imports requests at module scope (companion, ollama, spacexai,
+      # status), so the dependencies must be present for the import to
+      # succeed at all.
+      - name: Install dependencies
+        working-directory: crystalcore-app
+        run: python -m pip install -r requirements.txt
       # GOVERNANCE.md promises every change "passes the offline test suite
       # before merging". Until now CI only ran compileall, so the suite was
       # never executed here — and it was failing.
