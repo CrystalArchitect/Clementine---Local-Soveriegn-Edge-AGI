@@ -12,14 +12,14 @@ Every capability described in these documents carries a status marker, and the m
 |--------|---------|--------------|
 | ⬜ **Design** | An idea on paper. No implementation exists, and the docs say so plainly. | The CrystalMatrix protocol (`CRYSTALMATRIX.md`) |
 | 🟡 **Partial** | Some of it runs; the docs state exactly which part. | Episodic memory (`MEMORY.md` — summaries exist, time-anchored recall doesn't) |
-| ✅ **Built** | Implemented, covered by the offline test suite, and merged to `main` through a reviewed pull request. | Semantic recall with recency fading (`crystalcore/companion.py`) |
+| ✅ **Built** | Implemented, covered by the offline test suite, and merged to `master` through a reviewed pull request. | Consent-gated cloud providers (`crystalcore/companion.py`, covered by `test_no_cloud_without_consent_on_reload`) |
 
 A capability moves up the ladder only when the code moves first. Documentation is corrected *downward* immediately if it is found ahead of reality.
 
 ## Release Discipline
 
 - Every change lands on a branch, becomes a pull request, and passes the offline test suite before merging.
-- **The human steward merges.** Nothing enters `main` without a human decision, and the steward can halt anything at any time. (This implements the intent of the v2.2 Control Plane in `ARCHITECTURE.md`.)
+- **The human steward merges.** Nothing enters `master` without a human decision, and the steward can halt anything at any time. (This implements the intent of the v2.2 Control Plane in `ARCHITECTURE.md`.)
 - Tested means *demonstrated*: features ship with tests that exercise them, and where behaviour is visual, it is verified by actually running it.
 
 ## Non-Claims

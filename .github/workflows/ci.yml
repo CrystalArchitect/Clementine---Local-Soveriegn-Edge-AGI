@@ -21,6 +21,21 @@ jobs:
       - name: Syntax-check Python sources
         run: python -m compileall -q clementine crystalcore-app
 
+  python-tests:
+    name: Offline test suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # GOVERNANCE.md promises every change "passes the offline test suite
+      # before merging". Until now CI only ran compileall, so the suite was
+      # never executed here — and it was failing.
+      - name: Run the offline test suite
+        working-directory: crystalcore-app
+        run: python -m unittest discover -s tests -v
+
   web-checks:
     name: SvelteKit check + build
     runs-on: ubuntu-latest

@@ -80,7 +80,7 @@ Semantic recall is optional: if `nomic-embed-text` isn't present, Clementine sim
 Prefer a browser to a terminal? Same Clementine, same memory — now a Svelte app where you can watch her think and work at her terminal as you talk:
 
 ```bash
-python server.py                          # her local API, http://127.0.0.1:5177
+python server.py                          # her local API, http://127.0.0.1:5000
 cd webapp && npm install && npm run dev   # her interface, http://127.0.0.1:5174
 ```
 

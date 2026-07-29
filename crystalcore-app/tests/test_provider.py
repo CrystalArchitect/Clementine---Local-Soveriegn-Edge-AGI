@@ -21,6 +21,7 @@ from crystalcore import (
     user_facing_spacexai_error,
     xai_api_key_present,
 )
+from crystalcore import version as crystalcore_version
 from crystalcore.profiles import profile_meta
 
 
@@ -208,8 +209,18 @@ class ProfileMetaTests(unittest.TestCase):
 
 
 class VersionTests(unittest.TestCase):
-    def test_version(self):
-        self.assertEqual(__version__, "0.13.3")
+    def test_version_is_well_formed_and_exported(self):
+        # This asserted the literal "0.13.3" while version.py — which calls
+        # itself the single source of truth — said "0.13.4". Both arrived in
+        # the same import commit, so the suite has never passed here. A test
+        # that copies the constant it checks only re-breaks on the next bump,
+        # so it now checks the shape and the export instead.
+        self.assertIsInstance(__version__, str)
+        parts = __version__.split(".")
+        self.assertEqual(len(parts), 3, f"expected MAJOR.MINOR.PATCH, got {__version__!r}")
+        for part in parts:
+            self.assertTrue(part.isdigit(), f"non-numeric component in {__version__!r}")
+        self.assertEqual(__version__, crystalcore_version.__version__)
 
 
 if __name__ == "__main__":
