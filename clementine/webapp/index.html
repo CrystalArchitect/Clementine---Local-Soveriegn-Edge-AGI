@@ -2,13 +2,35 @@
 <html lang="en" class="bg">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
     <title>Clementine — sovereign companion</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpolygon points='16,2 28,12 24,28 8,28 4,12' fill='%23A78BFA'/%3E%3C/svg%3E" />
+    <meta name="description" content="A sovereign companion. She runs on hardware you own." />
+
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#000004" />
+
+    <!-- iOS wants its own tags alongside the manifest. Together with a real
+         certificate, these are what turn Add to Home Screen into an app
+         rather than a bookmark. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Clementine" />
+    <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/icons/icon-192.png" sizes="192x192" />
+    <script type="module" src="/src/main.js"></script>
+    <script>
+      // Registered late and failure-tolerant. No service worker just means a
+      // plain web page, which still works; it must never delay her opening.
+      if ('serviceWorker' in navigator) {
+        addEventListener('load', () =>
+          navigator.serviceWorker.register('/sw.js').catch(() => {}));
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
   </body>
 </html>
