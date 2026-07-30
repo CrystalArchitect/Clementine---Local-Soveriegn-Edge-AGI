@@ -29,6 +29,9 @@ Restart=always
 RestartSec=3
 
 Environment=PYTHONUNBUFFERED=1
+# ProtectSystem=strict makes the code directory read-only, so Python cannot
+# write __pycache__ there. Tell it not to try rather than let it fail quietly.
+Environment=PYTHONDONTWRITEBYTECODE=1
 Environment=CLEM_MODEL=llama3.1:8b
 Environment=CLEM_MEMORY_DIR=/var/lib/clementine/memory
 Environment=OLLAMA_HOST=http://127.0.0.1:11434
