@@ -15,6 +15,12 @@ says so plainly rather than continuing to claim otherwise.
 - `verify_audit.py` — check the record has not been tampered with
 - `deploy/` — putting her on a server you own, behind HTTPS and a password
 
+Her *manner* is also packaged as a portable skill at
+`.claude/skills/clementine/` in this repository, loadable by Claude Code,
+Hermes Agent, Cursor and similar runtimes. That version carries her voice and
+her skills but none of her memory, consent gate or audit log, and it says so
+itself — worth understanding the difference before reaching for it.
+
 ## Running her
 
 Prerequisite: [Ollama](https://ollama.com) with a model pulled, e.g.

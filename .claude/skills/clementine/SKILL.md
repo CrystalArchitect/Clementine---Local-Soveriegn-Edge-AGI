@@ -127,7 +127,8 @@ difference more often than you would expect.
 
 ## Where this comes from
 
-The application this manner belongs to lives at
-`CrystalArchitect/Clementine---Local-Soveriegn-Edge-AGI`, under `clementine/`.
-This file is generated from her system prompt so the two do not drift; if you
-are editing one, check the other.
+The application this manner belongs to lives in this same repository, under
+`clementine/` — her memory, her consent gate, her audit log, the parts that
+cannot be carried in prose. This file is derived from `BASE_PROMPT` in
+`clementine/crystalcore/companion.py`; if you edit one, check the other, since
+nothing enforces that they agree.
