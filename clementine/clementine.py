@@ -8,7 +8,9 @@ This file is her doorway from the command line:
     python clementine.py --profile Crystal  # a named profile
     python clementine.py --model llama3.2:3b
 
-Everything runs on your own device. Nothing leaves it.
+Her model is wherever OLLAMA_HOST points — by default this machine, in which
+case nothing you say leaves it. Point it elsewhere and she asks before every
+call, and records the answer either way.
 """
 
 import argparse
@@ -17,7 +19,7 @@ import sys
 # Re-exported so `from clementine import ...` keeps working everywhere.
 from crystalcore import (BASE_PROMPT, Clementine, Memory, Personality,  # noqa: F401
                          delete_profile, list_profiles, profile_dir,
-                         profile_meta)
+                         profile_meta, terminal_asker)
 
 HELP = """Commands:
   /name <name>      give her a name (or change it)
@@ -62,7 +64,10 @@ def main():
     print("Starting Clementine (local mode)...")
     print("Make sure Ollama is running with a model loaded.\n")
 
-    companion = Clementine(model=args.model, memory_dir=args.memory_dir)
+    # In the terminal a human is present, so she can ask before sending
+    # anything to a model that is not on this machine.
+    companion = Clementine(model=args.model, memory_dir=args.memory_dir,
+                           asker=terminal_asker)
 
     name = companion.personality.name or "Clementine"
     returning = bool(companion.memory.conversation or companion.memory.summaries)

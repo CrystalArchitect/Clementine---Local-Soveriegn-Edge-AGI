@@ -1,27 +1,37 @@
 """
-Clementine — local API server.
+Clementine — her face and her brain, on one address.
 
-The JSON backend for the Svelte web interface in webapp/. Runs only on
-your own machine (bound to 127.0.0.1, never exposed). Shares the same
-brain and memory folder as the terminal version (clementine.py), so you
-can switch between them freely. Nothing leaves your device.
+Serves the built Svelte interface from webapp/dist alongside the JSON API,
+so there is a single origin: no CORS, and a phone needs no configuration
+beyond the address itself. Shares the same brain and memory folder as the
+terminal version (clementine.py), so you can switch between them freely.
 
     pip install -r requirements.txt
-    python server.py                    # API at http://127.0.0.1:5000
+    cd webapp && npm install && npm run build && cd ..
+    python server.py                  # everything at http://127.0.0.1:5000
 
-Then, in another terminal, start the web interface:
+During development, run vite instead and it will proxy to this API:
 
-    cd webapp && npm install && npm run dev
+    python server.py                  # brain
+    cd webapp && npm run dev           # face, on its own port
+
+Binds 127.0.0.1 by default. --host exists for putting her behind a reverse
+proxy you control, and warns when used, because this server has no
+authentication of its own — that is the proxy's job (see deploy/).
 """
 
 import argparse
 from pathlib import Path
 
-from flask import Flask, Response, jsonify, request
+import requests
+from flask import Flask, Response, jsonify, request, send_from_directory
 
-from crystalcore import (Clementine, delete_profile, list_profiles,
-                         profile_dir, profile_meta)
+from crystalcore import (Clementine, Verdict, delete_profile, destination_of,
+                         list_profiles, profile_dir, profile_meta)
 from crystalcore import profiles as _profiles
+from crystalcore.companion import EMBED_URL, OLLAMA_HOST, OLLAMA_URL
+
+WEBAPP_DIST = Path(__file__).parent / "webapp" / "dist"
 
 
 def _profile_of(companion: Clementine) -> str:
@@ -35,8 +45,9 @@ def create_app(companion: Clementine) -> Flask:
 
     @app.after_request
     def allow_local_webapp(resp):
-        # The Svelte dev server (vite) runs on another localhost port.
-        # Only ever localhost origins — sovereignty means local only.
+        # Only for development, when vite serves her face on another localhost
+        # port. In a real deployment she is served from this same origin and no
+        # CORS header is emitted at all. Localhost origins only, always.
         origin = request.headers.get("Origin", "")
         if origin.startswith("http://127.0.0.1:") or origin.startswith("http://localhost:"):
             resp.headers["Access-Control-Allow-Origin"] = origin
@@ -47,6 +58,51 @@ def create_app(companion: Clementine) -> Flask:
     @app.route("/api/<path:_any>", methods=["OPTIONS"])
     def preflight(_any):
         return ("", 204)
+
+    # ---------- honesty endpoints ----------
+
+    @app.get("/api/health")
+    def health():
+        """What is actually true right now — not what we hope is true."""
+        c = holder["c"]
+        models, reachable = [], False
+        try:
+            r = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=3)
+            r.raise_for_status()
+            models = [m.get("name") for m in r.json().get("models", [])]
+            reachable = True
+        except requests.exceptions.RequestException:
+            pass
+        return jsonify({
+            "ok": True,
+            "model": c.model,
+            "model_present": c.model in models if reachable else None,
+            "models": models,
+            "ollama": reachable,
+            "ollama_host": OLLAMA_HOST,
+            # "local" means the model runs on this same machine.
+            "destination": destination_of(OLLAMA_URL),
+            "embeddings": c._embed_ok,
+            "audit_entries": len(c.audit.entries()) if c.audit else 0,
+        })
+
+    @app.get("/api/audit")
+    def audit():
+        """The continuity record, read-only, with its own integrity verdict."""
+        c = holder["c"]
+        if not c.audit:
+            return jsonify({"entries": [], "intact": None,
+                            "note": "auditing is disabled for this session"})
+        intact, problems = c.audit.verify()
+        entries = c.audit.entries()
+        limit = request.args.get("limit", type=int)
+        return jsonify({
+            "entries": entries[-limit:] if limit else entries,
+            "total": len(entries),
+            "intact": intact,
+            "problems": problems,
+            "head": c.audit.head(),
+        })
 
     @app.get("/api/status")
     def status():
@@ -170,12 +226,31 @@ def create_app(companion: Clementine) -> Flask:
         return jsonify({"ok": True, "profile": _profile_of(c),
                         "name": c.personality.name or "Clementine"})
 
+    # ---------- her face, from the same address ----------
+
+    @app.get("/")
+    @app.get("/<path:asset>")
+    def webapp(asset: str = "index.html"):
+        """Serve the built Svelte interface. Anything unrecognised falls back
+        to index.html so client-side routes work on a hard refresh."""
+        if not WEBAPP_DIST.exists():
+            return Response(
+                "Clementine's interface has not been built yet.\n\n"
+                "    cd webapp && npm install && npm run build\n\n"
+                "Her API is running and answering at /api/status — this "
+                "address just has no face to show you.\n",
+                mimetype="text/plain", status=503)
+        target = (WEBAPP_DIST / asset)
+        if not target.is_file():
+            asset = "index.html"
+        return send_from_directory(WEBAPP_DIST, asset)
+
     return app
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Clementine's local API server (127.0.0.1 only).")
+        description="Clementine — her face and her brain on one address.")
     parser.add_argument("--model", default="llama3.1:8b",
                         help="Ollama model tag (same choices as the CLI).")
     parser.add_argument("--memory-dir", default="clementine_memory",
@@ -183,19 +258,49 @@ def main():
     parser.add_argument("--profile", default="",
                         help="Named profile (separate person, separate memory).")
     parser.add_argument("--port", type=int, default=5000)
+    parser.add_argument("--host", default="127.0.0.1",
+                        help="Interface to bind. Leave as 127.0.0.1 unless an "
+                             "authenticating reverse proxy sits in front.")
+    parser.add_argument("--remote-model-ok", action="store_true",
+                        help="Consent, given once here, for this server to use "
+                             "a model that is not on this machine (OLLAMA_HOST). "
+                             "Without it, non-local model calls are refused.")
     args = parser.parse_args()
     if args.profile:
         args.memory_dir = profile_dir(args.profile)
 
-    companion = Clementine(model=args.model, memory_dir=args.memory_dir)
+    # No human is watching a web server's stdin, so consent cannot be asked
+    # for per call. It is given once, here, as a deliberate flag — and every
+    # call it permits says so in the audit log rather than appearing unremarked.
+    asker = None
+    if args.remote_model_ok:
+        def asker(_request):  # noqa: E306
+            return Verdict(True, "pre-authorised at startup with --remote-model-ok",
+                           remember=False)
+
+    companion = Clementine(model=args.model, memory_dir=args.memory_dir,
+                           asker=asker)
     app = create_app(companion)
     name = companion.personality.name or "Clementine"
-    print(f"{name}'s API is at http://127.0.0.1:{args.port}")
-    print("Start the web interface with: cd webapp && npm run dev")
-    print("Local only — nothing leaves this device. Ctrl+C to say goodnight.")
-    # Never bind beyond localhost, never enable the debugger: sovereignty
-    # means this server is reachable from this machine alone.
-    app.run(host="127.0.0.1", port=args.port, debug=False)
+
+    where = destination_of(OLLAMA_URL)
+    print(f"{name} is at http://{args.host}:{args.port}")
+    print(f"  model     {companion.model} on {'this machine' if where == 'local' else where}")
+    if where != "local" and not args.remote_model_ok:
+        print("            refusing to use it — pass --remote-model-ok to consent")
+    print(f"  face      {'built' if WEBAPP_DIST.exists() else 'NOT BUILT — cd webapp && npm run build'}")
+    print(f"  record    {companion.audit.path if companion.audit else 'disabled'}")
+
+    if args.host not in ("127.0.0.1", "localhost"):
+        print()
+        print(f"  WARNING: bound to {args.host}, not loopback. This server has")
+        print("  no authentication of its own — anyone who can reach this port")
+        print("  can talk to her and read her memory. Put an authenticating")
+        print("  reverse proxy in front of it (see deploy/).")
+    print()
+    print("Ctrl+C to say goodnight.")
+    # debug=False always: the Werkzeug debugger is a remote shell.
+    app.run(host=args.host, port=args.port, debug=False)
 
 
 if __name__ == "__main__":

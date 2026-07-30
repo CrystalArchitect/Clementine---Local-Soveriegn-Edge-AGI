@@ -9,6 +9,13 @@
   let profile = $state('');
   let online = $state(null); // null=checking, true, false
 
+  // Where her model actually is. Asked, never assumed — this used to be
+  // hardcoded as "local · 127.0.0.1", which would have kept saying so from a
+  // server on the other side of the world.
+  let destination = $state(null); // null=unknown, 'local', or a hostname
+  let auditCount = $state(null);
+  let auditIntact = $state(null);
+
   async function loadStatus() {
     try {
       const res = await fetch('/api/status');
@@ -20,6 +27,19 @@
       online = true;
     } catch {
       online = false;
+    }
+    try {
+      const h = await fetch('/api/health').then((r) => r.json());
+      destination = h.destination ?? null;
+      auditCount = h.audit_entries ?? null;
+    } catch {
+      destination = null;
+    }
+    try {
+      const a = await fetch('/api/audit?limit=1').then((r) => r.json());
+      auditIntact = a.intact;
+    } catch {
+      auditIntact = null;
     }
   }
   loadStatus();
@@ -39,7 +59,18 @@
     {:else}
       <span class="chip">waking…</span>
     {/if}
-    <span class="chip">local · 127.0.0.1</span>
+    {#if destination === 'local'}
+      <span class="chip ok" title="Her model runs on this same machine.">on this machine</span>
+    {:else if destination}
+      <span class="chip away" title="Her model runs elsewhere. Requests need your consent and are logged.">
+        via {destination}
+      </span>
+    {:else}
+      <span class="chip" title="Could not determine where her model runs.">location unknown</span>
+    {/if}
+    {#if auditIntact === false}
+      <span class="chip down" title="An entry was altered or removed after being written.">record broken</span>
+    {/if}
   </div>
 </header>
 
@@ -52,8 +83,16 @@
 </main>
 
 <footer>
-  Everything on this page stays on your device. Her memory lives in a local
-  folder you own. Non solus.
+  {#if destination === 'local'}
+    Her model runs on this machine, so nothing you say here leaves it.
+  {:else if destination}
+    Her model runs on <b>{destination}</b> — a machine you control. Your words
+    travel there and no further.
+  {:else}
+    Where her model runs could not be determined, so nothing is claimed about it.
+  {/if}
+  Her memory lives in a folder you own{#if auditCount}, and every call she makes
+  is in an append-only record ({auditCount} so far){/if}. Non solus.
 </footer>
 
 <style>
@@ -95,6 +134,12 @@
   .chip.down {
     color: #f0a5a5;
     border-color: rgba(240, 165, 165, 0.3);
+  }
+  /* Her model is somewhere other than this machine — not wrong, but worth
+     seeing at a glance rather than discovering later. */
+  .chip.away {
+    color: var(--purple);
+    border-color: rgba(167, 139, 250, 0.35);
   }
   .retry {
     background: transparent;

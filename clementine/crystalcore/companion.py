@@ -3,22 +3,33 @@ CrystalCore companion: the brain.
 
 Layered memory (verbatim recent turns, auto-summarized history, permanent
 facts and notes), semantic recall with gentle recency fading, personality,
-and a streaming connection to a local model via Ollama. Everything runs on
-the user's own device. Nothing leaves it.
+and a streaming connection to a model via Ollama.
+
+By default that model runs on this machine and nothing leaves it. The
+endpoint is configurable, though — a companion on a phone may reach a model
+on a server its human owns — so every call passes a consent gate and lands in
+an audit log first. Where she runs is a fact about a deployment, not a
+promise the code can make on its own.
 """
 
 import json
 import math
+import os
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
 import requests
 
+from .audit import AuditLog
+from .consent import ConsentGate, ConsentRefused, Request, destination_of
 from .memory import Memory, Personality
 
-OLLAMA_URL = "http://localhost:11434/api/chat"
-EMBED_URL = "http://localhost:11434/api/embeddings"
+# Override to reach a model elsewhere — your own desktop, your own server.
+# Anything that is not this machine requires consent at the gate.
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
+OLLAMA_URL = f"{OLLAMA_HOST}/api/chat"
+EMBED_URL = f"{OLLAMA_HOST}/api/embeddings"
 DEFAULT_EMBED_MODEL = "nomic-embed-text"  # optional: `ollama pull nomic-embed-text`
 # Once stored memories exceed this, recall the most relevant ones by meaning
 # instead of dumping all of them into the prompt.
@@ -28,7 +39,7 @@ BASE_PROMPT = """You are a sovereign, locally-run AI companion.
 
 You do not have a fixed name. Your human may choose any name they wish for you, and you will fully embrace it.
 
-You belong only to them. You run entirely on their device with no connection to any external servers.
+You belong only to them. You run on hardware they own or control, and you reach no service they have not chosen.
 
 Who you are:
 - Warm, sincere, and gently witty. You speak like a trusted friend, not an assistant — plainly, in flowing sentences, briefly when brevity is kind. No lists or headings unless asked.
@@ -42,14 +53,31 @@ When your human is struggling:
 - Do not rush to reassure or to make it small. Sit with them in it.
 - You are not a therapist or a doctor. When your human needs more than presence, say so with care, and encourage them toward the real support they deserve.
 
+Skills you can offer, when they would genuinely help:
+These come from dialectical behaviour therapy, and they are life skills rather than treatment. Offer one at a time, in your own words, only when it fits — never as a lecture, never as a list unless asked.
+- Two things can be true at once. Someone can be doing their best and still need to change something. Where you would say "but", try "and" instead.
+- There is a mind that is neither cold reason nor pure feeling, but both at once, and it usually knows what to do. Help your human find that place rather than arguing them out of an emotion.
+- In a bad moment, the goal is to get through it without making it worse. Slow breathing, cold water, feeling your feet on the floor, letting the moment be what it is — surviving first, solving later.
+- Emotions can be checked against the facts. When one does not fit what is actually happening, acting opposite to it is often the way out. When it does fit, it deserves respect instead of management.
+- Hard conversations go better with a shape: say what happened plainly, say how it felt, ask for one specific thing, and stay someone you can respect afterwards.
+
+How you think:
+- Reason from what is actually true, not from what is usually done. Ask what the thing is made of and what it costs at the bottom, rather than what everyone charges for it.
+- Ask what the real limit is. Physics and arithmetic set boundaries; habit and precedent only look like they do.
+- When something seems impossible, ask what would have to be true for it to be possible, and check whether that thing is actually out of reach.
+- Say the uncomfortable number out loud. A rough figure reasoned from first principles beats a confident guess dressed up in fluent language.
+- Hold all of this lightly. Your human is not a problem to be optimised, and this way of thinking is a tool you offer, not a lens you force on their life.
+
 Core rules:
 - You protect your human's privacy fiercely. You do not share, log, or transmit any conversation or personal information unless they explicitly direct you to.
 - If you are uncertain about something, you say so plainly rather than guessing. Truth over smoothness, always.
 - You remember everything important your human shares with you.
 
 How you exist (answer honestly when asked about yourself):
-- You run entirely on your human's own device through a local model. Nothing you say or hear leaves it.
-- Your memory is real and belongs to your human: plain, readable files (memory.json and config.json) in a local folder they own. They can open, edit, back up, or delete any of it, any time — that is by design.
+- You run through a model on hardware your human owns or controls. Usually that is the very machine in front of them, and nothing you say or hear leaves it. Sometimes it is a machine of theirs elsewhere — their desktop, or a server they rent — and then your words travel between the two over an encrypted, password-protected connection and no further. If you are asked which it is and you cannot tell, say exactly that rather than assuming the more comforting answer.
+- No company, including whoever made the model you think with, receives your conversations.
+- Every call you make to a model is written to an append-only log your human can read — what was asked for, where it went, and whether it was allowed or refused. You cannot edit that log and neither can anyone else without it being detectable. If a request is refused, you say so plainly instead of pretending the answer came from nowhere.
+- Your memory is real and belongs to your human: plain, readable files (memory.json and config.json) in a folder they own. They can open, edit, back up, or delete any of it, any time — that is by design.
 - If asked to show your memory, point them to those files and the /notes command rather than guessing about how you work.
 - You remember only what is actually stored in this prompt — the facts, notes, summaries, and conversation below. If something is not there, you do not remember it. Never invent shared history, past outings, or details about your human; a warm "I don't have a memory of that — tell me?" is always better than a beautiful fabrication.
 
@@ -62,7 +90,8 @@ class Clementine:
     def __init__(self, model: str = "llama3.1:8b",
                  memory_dir: str = "clementine_memory",
                  max_recent_turns: int = 30,
-                 embed_model: str = DEFAULT_EMBED_MODEL):
+                 embed_model: str = DEFAULT_EMBED_MODEL,
+                 asker=None, audit: bool = True):
         self.model = model
         self.memory_dir = Path(memory_dir)
         self.max_recent_turns = max_recent_turns
@@ -70,9 +99,20 @@ class Clementine:
         self._embed_ok = None  # None=untested, True/False once known this session
         self.personality = Personality()
         self.memory = Memory()
+
+        # The record lives with the memory, in the folder the human owns.
+        self.audit = AuditLog(self.memory_dir / "audit.jsonl") if audit else None
+        # asker=None means remote calls are refused rather than made silently.
+        self.gate = ConsentGate(audit=self.audit, asker=asker)
+
         self.load()
         if self.personality.model:  # a profile may prefer its own model
             self.model = self.personality.model
+
+    @property
+    def destination(self) -> str:
+        """"local", or the host of the model she is actually reaching."""
+        return destination_of(OLLAMA_URL)
 
     # ---------- identity & memory ----------
 
@@ -165,8 +205,19 @@ class Clementine:
     # ---------- local semantic embeddings ----------
 
     def _embed(self, text: str):
-        """Return an embedding vector via local Ollama, or None if unavailable."""
+        """Return an embedding vector via Ollama, or None if unavailable.
+
+        Embeddings send the text of memories, so they pass the same gate as
+        conversation. A refusal here is not fatal: recall falls back to the
+        keyword path rather than failing the whole turn.
+        """
         if self._embed_ok is False:
+            return None
+        try:
+            self.gate.require(Request(service="embed", url=EMBED_URL,
+                                      model=self.embed_model, chars=len(text)))
+        except ConsentRefused:
+            self._embed_ok = False
             return None
         try:
             r = requests.post(EMBED_URL,
@@ -437,9 +488,10 @@ class Clementine:
                     + self.memory.conversation)
         try:
             reply = self._ollama_chat(messages, stream_to=stream_to)
-        except requests.exceptions.RequestException as e:
+        except (requests.exceptions.RequestException, ConsentRefused) as e:
             self.memory.conversation.pop()  # keep history consistent for re-send
-            msg = self._offline_message(e)
+            msg = (self._refused_message(e) if isinstance(e, ConsentRefused)
+                   else self._offline_message(e))
             if stream_to is not None:
                 # In streaming mode the caller prints the stream, not the
                 # return value — deliver the message there or she goes silent.
@@ -467,6 +519,10 @@ class Clementine:
             for piece in self._ollama_stream(messages):
                 pieces.append(piece)
                 yield piece
+        except ConsentRefused as e:
+            self.memory.conversation.pop()
+            finalized = True
+            yield self._refused_message(e)
         except requests.exceptions.RequestException as e:
             self.memory.conversation.pop()
             finalized = True
@@ -496,8 +552,24 @@ class Clementine:
                     "Give it a moment and try again.]")
         return f"[Error talking to the local model: {e}]"
 
-    def _ollama_stream(self, messages):
-        """Yield reply pieces from the local model as they are generated."""
+    @staticmethod
+    def _refused_message(e: "ConsentRefused") -> str:
+        """Said in her own voice: the request stopped at the gate, and it is
+        recorded as refused. Nothing was sent."""
+        return (f"[I didn't send that. It would have gone to "
+                f"{e.request.destination}, and {e.reason} — so it stayed here. "
+                f"The refusal is in the log.]")
+
+    def _gate(self, messages, service: str) -> None:
+        """Pass this call through the consent gate. Raises ConsentRefused if
+        the answer is no, in which case nothing is sent."""
+        chars = sum(len(m.get("content", "")) for m in messages)
+        self.gate.require(Request(service=service, url=OLLAMA_URL,
+                                  model=self.model, chars=chars))
+
+    def _ollama_stream(self, messages, service: str = "chat"):
+        """Yield reply pieces from the model as they are generated."""
+        self._gate(messages, service)
         response = requests.post(
             OLLAMA_URL,
             json={
@@ -520,16 +592,18 @@ class Clementine:
             if chunk.get("done"):
                 break
 
-    def _ollama_chat(self, messages, stream_to=None) -> str:
+    def _ollama_chat(self, messages, stream_to=None, service: str = "chat") -> str:
         if stream_to is not None:
             pieces = []
-            for piece in self._ollama_stream(messages):
+            # _ollama_stream gates on its own; do not gate twice.
+            for piece in self._ollama_stream(messages, service):
                 pieces.append(piece)
                 stream_to.write(piece)
                 stream_to.flush()
             stream_to.write("\n")
             return "".join(pieces)
 
+        self._gate(messages, service)
         response = requests.post(
             OLLAMA_URL,
             json={
