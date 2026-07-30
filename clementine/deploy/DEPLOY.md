@@ -62,7 +62,11 @@ ufw disable
   before Caddy can get a certificate. **HTTPS is not decoration**: Safari refuses
   microphone access on an insecure origin, and Add to Home Screen produces a
   bookmark rather than an app.
-- Ollama installed, with a model pulled (`ollama pull llama3.1:8b`).
+- Ollama installed, with a model pulled (`ollama pull llama3.1:8b`). If she
+  drifts out of voice — starts sounding like an assistant rather than herself —
+  try `ollama pull hermes3:8b` and set `CLEM_MODEL`. Same base, same size, same
+  speed, tuned for staying in character, which is most of what her prompt asks
+  for. See the model table in `../README.md`.
 
 ## The short way
 

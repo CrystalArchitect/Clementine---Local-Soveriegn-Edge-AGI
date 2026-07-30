@@ -15,11 +15,32 @@ says so plainly rather than continuing to claim otherwise.
 - `verify_audit.py` — check the record has not been tampered with
 - `deploy/` — putting her on a server you own, behind HTTPS and a password
 
+Her *manner* is also packaged as a portable skill at
+`.claude/skills/clementine/` in this repository, loadable by Claude Code,
+Hermes Agent, Cursor and similar runtimes. That version carries her voice and
+her skills but none of her memory, consent gate or audit log, and it says so
+itself — worth understanding the difference before reaching for it.
+
 ## Running her
 
 Prerequisite: [Ollama](https://ollama.com) with a model pulled, e.g.
 `ollama pull llama3.1:8b`. Optionally `ollama pull nomic-embed-text`, which gives
 her semantic recall instead of keyword matching.
+
+**Which model.** Her system prompt is long and asks for something specific —
+a consistent manner, restraint about offering solutions, skills deployed one at
+a time. Instruction-following and character consistency matter more here than
+raw benchmark scores.
+
+| Model | Why |
+|---|---|
+| `llama3.1:8b` | The default. Solid, widely available, known quantity. |
+| `hermes3:8b` | Nous Research's fine-tune of the same base, tuned for steerability and staying in character. Same size and speed, usually better at holding a long persona prompt. Worth trying if she drifts out of voice. |
+| `llama3.2:3b` | Noticeably faster on CPU, less depth. The right trade if 8B is painful on your hardware. |
+
+Set it with `--model`, per profile, or `CLEM_MODEL` in the service file.
+Model tags change; check `ollama list` against what you actually pulled rather
+than trusting this table.
 
 ### Terminal
 
