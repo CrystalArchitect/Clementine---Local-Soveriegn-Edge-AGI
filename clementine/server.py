@@ -45,8 +45,9 @@ def create_app(companion: Clementine) -> Flask:
 
     @app.after_request
     def allow_local_webapp(resp):
-        # The Svelte dev server (vite) runs on another localhost port.
-        # Only ever localhost origins — sovereignty means local only.
+        # Only for development, when vite serves her face on another localhost
+        # port. In a real deployment she is served from this same origin and no
+        # CORS header is emitted at all. Localhost origins only, always.
         origin = request.headers.get("Origin", "")
         if origin.startswith("http://127.0.0.1:") or origin.startswith("http://localhost:"):
             resp.headers["Access-Control-Allow-Origin"] = origin

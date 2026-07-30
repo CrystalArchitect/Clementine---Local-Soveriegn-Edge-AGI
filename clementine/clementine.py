@@ -8,7 +8,9 @@ This file is her doorway from the command line:
     python clementine.py --profile Crystal  # a named profile
     python clementine.py --model llama3.2:3b
 
-Everything runs on your own device. Nothing leaves it.
+Her model is wherever OLLAMA_HOST points — by default this machine, in which
+case nothing you say leaves it. Point it elsewhere and she asks before every
+call, and records the answer either way.
 """
 
 import argparse

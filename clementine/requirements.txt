@@ -1,2 +1,6 @@
 requests>=2.28
 flask>=3.0
+
+# Only needed to run her behind a reverse proxy (see deploy/). Neither the
+# terminal version nor a local `python server.py` touches it.
+gunicorn>=21.2; sys_platform != "win32"
