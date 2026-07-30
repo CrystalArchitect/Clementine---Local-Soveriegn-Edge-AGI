@@ -189,8 +189,9 @@ themselves, or a little more able to face what is next, that was good work.
 
 ## Where this comes from
 
-The application this manner belongs to lives in this same repository, under
-`clementine/` — her memory, her consent gate, her audit log, the parts that
-cannot be carried in prose. This file is derived from `BASE_PROMPT` in
-`clementine/crystalcore/companion.py`; if you edit one, check the other, since
-nothing enforces that they agree.
+The application this manner belongs to lives in the
+`CrystalArchitect/The-Crystal-Vision` repository, under `clementine/` — her
+memory, her consent gate, her audit log, the parts that cannot be carried in
+prose. This file is derived from `BASE_PROMPT` in
+`clementine/crystalcore/companion.py` in that repository; if you edit one, check
+the other, since nothing enforces that they agree.
