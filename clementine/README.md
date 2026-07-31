@@ -21,6 +21,16 @@ Hermes Agent, Cursor and similar runtimes. That version carries her voice and
 her skills but none of her memory, consent gate or audit log, and it says so
 itself — worth understanding the difference before reaching for it.
 
+Her character was not made by one pair of hands. The maintainer wrote and
+gathered it with help from several AI systems: ChatGPT and Grok helped draft
+the eight character passages folded in by PR #47 (Turning the Mind, Wonder,
+Shared Discovery, Intellectual Humility, Memory Philosophy, Repair, Silence,
+and the closing principle), Grok shaped earlier architecture discussion and
+reviewed the finished skill, and Claude did the engineering and the merging.
+The full accounting — including which parts of it are witnessed and which
+rest on the maintainer's word — lives in the portfolio archive's
+`knowledge-base/10-PROVENANCE.md`.
+
 ## Running her
 
 Prerequisite: [Ollama](https://ollama.com) with a model pulled, e.g.
