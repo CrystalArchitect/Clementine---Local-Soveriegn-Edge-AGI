@@ -13,8 +13,9 @@ shipped here). Your human may rename her; the framework doesn't mind.
 
 from .audit import AuditLog
 from .companion import BASE_PROMPT, Clementine
-from .consent import (ConsentGate, ConsentRefused, Request, Verdict,
-                      destination_of, terminal_asker)
+from .consent import (PROTECTED_SOURCES, ConsentGate, ConsentRefused, Request,
+                      Verdict, destination_of, protected_reason,
+                      terminal_asker)
 from .memory import Memory, Personality
 from .profiles import (PROFILES_DIR, delete_profile, list_profiles,
                        profile_dir, profile_meta)
@@ -29,4 +30,5 @@ __all__ = [
     "PROFILES_DIR", "profile_dir", "list_profiles", "profile_meta",
     "delete_profile", "AuditLog", "ConsentGate", "ConsentRefused",
     "Request", "Verdict", "destination_of", "terminal_asker", "__version__",
+    "PROTECTED_SOURCES", "protected_reason",
 ]

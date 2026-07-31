@@ -16,6 +16,10 @@ rather than allowed. A gate that opens when the doorman is absent is a door.
 
 Refusals are recorded as carefully as approvals. A log of only the things
 that succeeded would flatter the system instead of describing it.
+
+And some material is not the maintainer's to release at all — see
+PROTECTED_SOURCES below. That rule is not a preference and does not have a
+prompt attached.
 """
 
 from __future__ import annotations
@@ -24,6 +28,42 @@ from dataclasses import dataclass
 from urllib.parse import urlparse
 
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", "[::1]", "0.0.0.0"}
+
+# Material that cannot be sent to a model by anybody, with anybody's yes.
+#
+# The TerAustralis governance document Indigenous-Data-Sovereignty.md states
+# that no Songline knowledge enters any model, dataset or index without Free,
+# Prior and Informed Consent from the relevant custodians, and that intent to
+# obtain consent later is not consent.
+#
+# Two consequences are built in here rather than left to discipline:
+#
+#   * It says *any model*, not *any remote model*. A model running on this
+#     machine is still a model, so this check sits above the local allowance
+#     rather than inside the remote branch.
+#
+#   * It says *the relevant custodians*. The person at the keyboard is not
+#     them, so there is deliberately no prompt. Asking would manufacture a
+#     yes from someone who has no standing to give one, and a gate that
+#     offers a way through has not implemented the rule.
+#
+# Deliberately broader than the rule requires: not everything under mythos/ is
+# custodial. Narrowing it is a judgement about specific cultural material, and
+# that judgement belongs to custodians, not to a path list written here.
+PROTECTED_SOURCES: tuple[str, ...] = ("mythos/",)
+
+
+def protected_reason(source: str | None) -> str | None:
+    """Why this source may not be sent anywhere, or None if it may."""
+    if not source:
+        return None
+    path = source.replace("\\", "/").lstrip("./")
+    for prefix in PROTECTED_SOURCES:
+        if path.startswith(prefix) or f"/{prefix}" in path:
+            return (f"{prefix.rstrip('/')} holds custodial material — sending "
+                    "it to any model needs consent from custodians, which is "
+                    "not the account holder's to give")
+    return None
 
 
 def destination_of(url: str) -> str:
@@ -39,6 +79,10 @@ class Request:
     url: str
     model: str
     chars: int = 0      # size of what would be sent, not its content
+    source: str | None = None   # where the content came from, if from a file.
+                                # A path, never the content itself — the gate
+                                # decides on provenance, and the audit log
+                                # keeps its promise not to store what was said.
 
     @property
     def destination(self) -> str:
@@ -50,8 +94,9 @@ class Request:
 
     def describe(self) -> str:
         where = "this machine" if self.is_local else self.destination
-        return (f"{self.service} → {where} using {self.model} "
+        line = (f"{self.service} → {where} using {self.model} "
                 f"({self.chars} characters)")
+        return f"{line} from {self.source}" if self.source else line
 
 
 @dataclass
@@ -91,6 +136,12 @@ class ConsentGate:
 
     def check(self, request: Request) -> Verdict:
         """Decide without recording. Useful for showing state in a UI."""
+        # First, and above the local allowance on purpose: a model on this
+        # machine is still a model. See PROTECTED_SOURCES. No asker is
+        # consulted, and no session approval can reach past this.
+        protected = protected_reason(request.source)
+        if protected:
+            return Verdict(False, protected)
         if request.is_local and self.allow_local:
             return Verdict(True, "local")
         if self._key(request) in self._session_ok:
@@ -115,6 +166,9 @@ class ConsentGate:
                 model=request.model,
                 chars=request.chars,
                 reason=verdict.reason or None,
+                # A path, not content. A refusal that does not say what was
+                # refused leaves nothing to act on.
+                source=request.source or None,
             )
         if not verdict.approved:
             raise ConsentRefused(request, verdict.reason or "Consent refused.")

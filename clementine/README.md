@@ -92,6 +92,36 @@ else and every call needs your consent:
 - With no way to ask, a non-local call is **refused**. A gate that opens when
   nobody is there to ask is just a door.
 
+### What no yes can unlock
+
+A `Request` may carry a `source` — a path saying where the content came from,
+never the content itself. Any source under `mythos/` is refused **before the
+gate asks anyone anything**, and no session approval reaches past it.
+
+Two things about that are deliberate, and both follow from the wording of
+`Indigenous-Data-Sovereignty.md`, which says no Songline knowledge enters any
+model, dataset or index without Free, Prior and Informed Consent from the
+relevant custodians:
+
+- **It applies to local models too.** The rule says *any model*. Ollama on your
+  own machine is a model, so the check sits above the local allowance rather
+  than inside the remote branch.
+- **There is no prompt.** The rule says *the relevant custodians*. Whoever is at
+  the keyboard is not them, so being asked would produce a yes that means
+  nothing. The gate refuses, names the rule, and offers no way through.
+
+The path list is broader than the rule strictly requires — not everything under
+`mythos/` is custodial material. Narrowing it is a judgement about specific
+cultural material, and that judgement belongs to custodians rather than to a
+tuple in a Python file.
+
+Refusals are recorded with the path that was blocked, so the log says what was
+stopped rather than only that something was:
+
+```bash
+python3 verify_consent.py     # 25 checks, including every case above
+```
+
 The interface shows `on this machine` or `via <host>` from a live check, never a
 hardcoded assumption.
 
